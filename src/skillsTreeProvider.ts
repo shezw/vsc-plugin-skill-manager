@@ -191,14 +191,23 @@ export class SkillsTreeProvider
     });
 
     // 2. Workspace skills – one entry per workspace folder
+    // GitHub Copilot skills can live in .github/skills/ or .copilot/skills/
+    const WORKSPACE_SKILL_SUBDIRS = [
+      path.join('.github', 'skills'),
+      path.join('.copilot', 'skills'),
+    ];
     const workspaceFolders = vscode.workspace.workspaceFolders ?? [];
     for (const wf of workspaceFolders) {
-      this._sources.push({
-        kind: 'workspace',
-        label: `Workspace: ${wf.name}`,
-        rootPath: path.join(wf.uri.fsPath, '.copilot', 'skills'),
-        subPath: '',
-      });
+      for (const subdir of WORKSPACE_SKILL_SUBDIRS) {
+        const fullPath = path.join(wf.uri.fsPath, subdir);
+        // _getRootItems will filter out non-existent paths
+        this._sources.push({
+          kind: 'workspace',
+          label: `Workspace: ${wf.name}`,
+          rootPath: fullPath,
+          subPath: '',
+        });
+      }
     }
 
     // 3. Extra configured paths
