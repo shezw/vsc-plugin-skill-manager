@@ -8,9 +8,31 @@ import {
   SkillFileItem,
   SourceItem,
 } from './skillsTreeProvider';
+import { SkillFsProvider, SKILL_FS_SCHEME, SKILL_FS_ROOT, SKILL_FS_FOLDER_NAME } from './skillFsProvider';
 import { SkillDiagnosticsProvider } from './skillDiagnostics';
 
 export function activate(context: vscode.ExtensionContext): void {
+  // ── Virtual FS: inject 📖 SKILLS at the top of the Explorer ───────────────
+  const skillFs = new SkillFsProvider(context);
+  context.subscriptions.push(
+    vscode.workspace.registerFileSystemProvider(SKILL_FS_SCHEME, skillFs, {
+      isCaseSensitive: true,
+    }),
+  );
+
+  // Add the virtual workspace folder at index 0 (above real project folders)
+  // only if it isn't already present (persists across VS Code restarts in
+  // the .code-workspace file or workspace storage).
+  const alreadyPresent = (vscode.workspace.workspaceFolders ?? []).some(
+    (f) => f.uri.scheme === SKILL_FS_SCHEME,
+  );
+  if (!alreadyPresent) {
+    vscode.workspace.updateWorkspaceFolders(0, 0, {
+      uri: SKILL_FS_ROOT,
+      name: SKILL_FS_FOLDER_NAME,
+    });
+  }
+
   // ── Tree view ──────────────────────────────────────────────────────────────
   const treeProvider = new SkillsTreeProvider(context);
   const treeView = vscode.window.createTreeView('skillsExplorer', {
