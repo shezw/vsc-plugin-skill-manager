@@ -10,6 +10,11 @@ import {
 } from './skillsTreeProvider';
 import { SkillDiagnosticsProvider } from './skillDiagnostics';
 
+class SkillPreviewDocument implements vscode.CustomDocument {
+  constructor(public readonly uri: vscode.Uri) {}
+  dispose(): void {}
+}
+
 export function activate(context: vscode.ExtensionContext): void {
   ensureExplorerSkillMirrors();
   context.subscriptions.push(
@@ -25,6 +30,29 @@ export function activate(context: vscode.ExtensionContext): void {
     showCollapseAll: true,
   });
   context.subscriptions.push(sidebarView, treeProvider);
+
+  context.subscriptions.push(
+    vscode.window.registerCustomEditorProvider(
+      'skill-preview.skillReadonlyPreview',
+      {
+        async openCustomDocument(uri: vscode.Uri): Promise<SkillPreviewDocument> {
+          return new SkillPreviewDocument(uri);
+        },
+        async resolveCustomEditor(
+          document: SkillPreviewDocument,
+          webviewPanel: vscode.WebviewPanel,
+        ): Promise<void> {
+          webviewPanel.webview.options = { enableScripts: false };
+          const content = fs.readFileSync(document.uri.fsPath, 'utf-8');
+          webviewPanel.title = `Preview: ${path.basename(path.dirname(document.uri.fsPath))}`;
+          webviewPanel.webview.html = renderSkillHtml(content, document.uri.fsPath);
+        },
+      },
+      {
+        supportsMultipleEditorsPerDocument: false,
+      },
+    ),
+  );
 
   // ── Diagnostics ────────────────────────────────────────────────────────────
   const diagnostics = new SkillDiagnosticsProvider();
