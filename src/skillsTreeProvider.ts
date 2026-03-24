@@ -213,19 +213,26 @@ export class SkillsTreeProvider
   }
 
   private _getRootItems(): SourceItem[] {
-    return this._sources.map((src) => {
-      const scanPath = path.join(src.rootPath, src.subPath);
-      const cacheKey = scanPath;
+    return this._sources
+      .map((src) => {
+        const scanPath = path.join(src.rootPath, src.subPath);
 
-      let kids = this._cache.get(cacheKey);
-      if (!kids) {
-        const entries = scanSkillsDir(scanPath);
-        kids = entries.map((e) => new SkillFolderItem(e, src.kind, this.context.extensionUri));
-        this._cache.set(cacheKey, kids);
-      }
+        let kids = this._cache.get(scanPath);
+        if (!kids) {
+          const entries = scanSkillsDir(scanPath);
+          kids = entries.map((e) => new SkillFolderItem(e, src.kind, this.context.extensionUri));
+          this._cache.set(scanPath, kids);
+        }
 
-      return new SourceItem(src, kids);
-    });
+        return new SourceItem(src, kids);
+      })
+      .filter((item) => {
+        // Always show personal skills (even if empty — dir is auto-created by Copilot)
+        if (item.source.kind === 'personal') { return true; }
+        // Only show workspace/custom sources when their directory actually exists
+        const scanPath = path.join(item.source.rootPath, item.source.subPath);
+        return fs.existsSync(scanPath);
+      });
   }
 
   private _getSkillFiles(folder: SkillFolderItem): SkillFileItem[] {

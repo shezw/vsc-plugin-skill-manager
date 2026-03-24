@@ -48,7 +48,7 @@ export function activate(context: vscode.ExtensionContext): void {
         if (!uri) { return; }
 
         const doc = await vscode.workspace.openTextDocument(uri);
-        await vscode.window.showTextDocument(doc, { preview: false });
+        await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Active });
       },
     ),
   );
@@ -185,7 +185,7 @@ async function createNewSkill(
   treeProvider.refresh();
 
   const doc = await vscode.workspace.openTextDocument(skillFilePath);
-  await vscode.window.showTextDocument(doc, { preview: false });
+  await vscode.window.showTextDocument(doc, { preview: false, viewColumn: vscode.ViewColumn.Active });
 }
 
 function buildSkillTemplate(id: string, name: string, description: string): string {
@@ -228,7 +228,7 @@ async function openSkillWebview(
   const panel = vscode.window.createWebviewPanel(
     'skillPreview',
     `Preview: ${path.basename(path.dirname(filePath))}`,
-    vscode.ViewColumn.Beside,
+    vscode.ViewColumn.Active,
     { enableScripts: false },
   );
 
