@@ -2,7 +2,7 @@
   "name": "skill-preview",
   "displayName": "Skills of LLM",
   "description": "Browse, preview and author GitHub Copilot SKILL.md files with syntax highlighting, diagnostics and snippets.",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "publisher": "shezw",
   "license": "MIT",
   "repository": {
@@ -154,7 +154,7 @@
         {
           "command": "skill-preview.openSkill",
           "when": "!explorerResourceIsFolder && resourceExtname == .md && resourcePath =~ /\\.\\!SKILLS/",
-          "group": "navigation@1"
+          "group": "inline@1"
         }
       ],
       "view/item/context": [
@@ -195,6 +195,11 @@
           "type": "boolean",
           "default": true,
           "description": "Show file count badge on skill folder items"
+        },
+        "skill-preview.disableExplorerSkillMirrorFolder": {
+          "type": "boolean",
+          "default": true,
+          "description": "Disable creation of the .!SKILLS mirror folder in the Explorer. When enabled, the extension will not create or maintain .!SKILLS."
         }
       }
     }

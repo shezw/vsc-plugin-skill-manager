@@ -15,31 +15,6 @@ class SkillPreviewDocument implements vscode.CustomDocument {
   dispose(): void {}
 }
 
-class SkillMirrorDecorationProvider implements vscode.FileDecorationProvider {
-  private readonly _onDidChangeFileDecorations = new vscode.EventEmitter<vscode.Uri | vscode.Uri[] | undefined>();
-  readonly onDidChangeFileDecorations = this._onDidChangeFileDecorations.event;
-
-  provideFileDecoration(uri: vscode.Uri): vscode.FileDecoration | undefined {
-    if (uri.scheme !== 'file') {
-      return undefined;
-    }
-
-    const normalized = uri.fsPath.replace(/\\/g, '/');
-    const base = path.basename(normalized);
-
-    if (base === '.!SKILLS') {
-      return new vscode.FileDecoration('S', 'Skills mirror root', new vscode.ThemeColor('charts.yellow'));
-    }
-    if (normalized.includes('/.!SKILLS/Local Skills')) {
-      return new vscode.FileDecoration('L', 'Local Skills', new vscode.ThemeColor('charts.blue'));
-    }
-    if (normalized.includes('/.!SKILLS/Project Skills')) {
-      return new vscode.FileDecoration('P', 'Project Skills', new vscode.ThemeColor('charts.green'));
-    }
-    return undefined;
-  }
-}
-
 export function activate(context: vscode.ExtensionContext): void {
   ensureExplorerSkillMirrors();
   context.subscriptions.push(
@@ -55,9 +30,6 @@ export function activate(context: vscode.ExtensionContext): void {
     showCollapseAll: true,
   });
   context.subscriptions.push(sidebarView, treeProvider);
-  context.subscriptions.push(
-    vscode.window.registerFileDecorationProvider(new SkillMirrorDecorationProvider()),
-  );
 
   context.subscriptions.push(
     vscode.window.registerCustomEditorProvider(
@@ -70,10 +42,7 @@ export function activate(context: vscode.ExtensionContext): void {
           document: SkillPreviewDocument,
           webviewPanel: vscode.WebviewPanel,
         ): Promise<void> {
-          webviewPanel.webview.options = { enableScripts: false };
-          const content = fs.readFileSync(document.uri.fsPath, 'utf-8');
-          webviewPanel.title = `Preview: ${path.basename(path.dirname(document.uri.fsPath))}`;
-          webviewPanel.webview.html = renderSkillHtml(content, document.uri.fsPath);
+          wirePreviewWebview(context, webviewPanel, document.uri.fsPath);
         },
       },
       {
@@ -176,6 +145,7 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
+      ensureExplorerSkillMirrors();
       treeProvider.refresh();
     }),
   );
@@ -190,9 +160,22 @@ function getProjectFolders(): readonly vscode.WorkspaceFolder[] {
 }
 
 function ensureExplorerSkillMirrors(): void {
+  if (isExplorerMirrorDisabled()) {
+    for (const folder of getProjectFolders()) {
+      removePathIfExists(path.join(folder.uri.fsPath, '.!SKILLS'));
+    }
+    return;
+  }
+
   for (const folder of getProjectFolders()) {
     ensureExplorerSkillMirror(folder.uri.fsPath);
   }
+}
+
+function isExplorerMirrorDisabled(): boolean {
+  return vscode.workspace
+    .getConfiguration('skill-preview')
+    .get<boolean>('disableExplorerSkillMirrorFolder', true);
 }
 
 function ensureExplorerSkillMirror(workspaceRoot: string): void {
@@ -365,14 +348,33 @@ async function openSkillWebview(
     'skillPreview',
     `Preview: ${path.basename(path.dirname(filePath))}`,
     vscode.ViewColumn.Active,
-    { enableScripts: false },
+    { enableScripts: true },
   );
 
-  const content = fs.readFileSync(filePath, 'utf-8');
-  panel.webview.html = renderSkillHtml(content, filePath);
+  wirePreviewWebview(context, panel, filePath);
 }
 
-function renderSkillHtml(raw: string, filePath: string): string {
+function wirePreviewWebview(
+  context: vscode.ExtensionContext,
+  panel: vscode.WebviewPanel,
+  filePath: string,
+): void {
+  panel.webview.options = { enableScripts: true };
+  const content = fs.readFileSync(filePath, 'utf-8');
+  panel.webview.html = renderSkillHtml(content, filePath, true);
+  panel.webview.onDidReceiveMessage(
+    async (message) => {
+      if (message?.type !== 'edit') {
+        return;
+      }
+      await vscode.commands.executeCommand('skill-preview.openSkill', filePath);
+    },
+    undefined,
+    context.subscriptions,
+  );
+}
+
+function renderSkillHtml(raw: string, filePath: string, showEditButton = false): string {
   // Parse frontmatter
   const fmMatch = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
   let fmHtml = '';
@@ -409,6 +411,9 @@ function renderSkillHtml(raw: string, filePath: string): string {
   body { font-family: var(--vscode-editor-font-family, 'Segoe UI', sans-serif);
          font-size: 14px; color: var(--vscode-editor-foreground);
          background: var(--vscode-editor-background); padding: 1.5rem 2rem; max-width: 800px; }
+  .topbar { display: flex; justify-content: flex-end; margin-bottom: 1rem; }
+  .edit-btn { border: 1px solid var(--vscode-button-border, transparent); background: var(--vscode-button-background); color: var(--vscode-button-foreground); padding: 0.45rem 0.9rem; border-radius: 6px; cursor: pointer; font: inherit; }
+  .edit-btn:hover { background: var(--vscode-button-hoverBackground); }
   h1 { color: var(--vscode-textLink-activeForeground); border-bottom: 1px solid var(--vscode-panel-border); padding-bottom: .4em; }
   h2 { color: var(--vscode-textPreformat-foreground); margin-top: 1.4em; }
   h3 { margin-top: 1.2em; }
@@ -426,9 +431,16 @@ function renderSkillHtml(raw: string, filePath: string): string {
 </style>
 </head>
 <body>
+${showEditButton ? '<div class="topbar"><button class="edit-btn" id="edit-btn" type="button">Edit</button></div>' : ''}
 <div class="fm-section">Frontmatter</div>
 ${fmHtml}
 ${bodyHtml}
+${showEditButton ? `<script>
+const vscode = acquireVsCodeApi();
+document.getElementById('edit-btn')?.addEventListener('click', () => {
+  vscode.postMessage({ type: 'edit' });
+});
+</script>` : ''}
 </body>
 </html>`;
 }
