@@ -10,6 +10,8 @@ import {
 } from './skillsTreeProvider';
 import { SkillDiagnosticsProvider } from './skillDiagnostics';
 
+type ViewMode = 'explorer' | 'activitybar';
+
 export function activate(context: vscode.ExtensionContext): void {
   // ── Clean up any skillfs:// workspace folder injected by a previous version ─
   const folders = vscode.workspace.workspaceFolders ?? [];
@@ -20,11 +22,17 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // ── Tree view ──────────────────────────────────────────────────────────────
   const treeProvider = new SkillsTreeProvider(context);
-  const treeView = vscode.window.createTreeView('skillsExplorer', {
+  const explorerView = vscode.window.createTreeView('skillsExplorer', {
     treeDataProvider: treeProvider,
     showCollapseAll: true,
   });
-  context.subscriptions.push(treeView, treeProvider);
+  const sidebarView = vscode.window.createTreeView('skillsSidebar', {
+    treeDataProvider: treeProvider,
+    showCollapseAll: true,
+  });
+  context.subscriptions.push(explorerView, sidebarView, treeProvider);
+
+  applyViewModeContext(getViewMode());
 
   // ── Diagnostics ────────────────────────────────────────────────────────────
   const diagnostics = new SkillDiagnosticsProvider();
@@ -113,10 +121,31 @@ export function activate(context: vscode.ExtensionContext): void {
       // The tree view does not support findItem, so just refresh to keep in sync
     }),
   );
+
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((event) => {
+      if (!event.affectsConfiguration('skill-preview')) {
+        return;
+      }
+
+      applyViewModeContext(getViewMode());
+      treeProvider.refresh();
+    }),
+  );
 }
 
 export function deactivate(): void {
   // nothing
+}
+
+function getViewMode(): ViewMode {
+  const mode = vscode.workspace.getConfiguration('skill-preview').get<string>('viewMode', 'explorer');
+  return mode === 'activitybar' ? 'activitybar' : 'explorer';
+}
+
+function applyViewModeContext(mode: ViewMode): void {
+  void vscode.commands.executeCommand('setContext', 'skillPreview.showExplorerView', mode === 'explorer');
+  void vscode.commands.executeCommand('setContext', 'skillPreview.showActivityBarView', mode === 'activitybar');
 }
 
 // ─── New skill wizard ─────────────────────────────────────────────────────────

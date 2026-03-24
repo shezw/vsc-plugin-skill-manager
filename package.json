@@ -2,7 +2,7 @@
   "name": "skill-preview",
   "displayName": "Skills of LLM",
   "description": "Browse, preview and author GitHub Copilot SKILL.md files with syntax highlighting, diagnostics and snippets.",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "publisher": "shezw",
   "license": "MIT",
   "repository": {
@@ -29,6 +29,15 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "skillPreviewSidebar",
+          "title": "Skills",
+          "icon": "./icons/skill-root.svg"
+        }
+      ]
+    },
     "languages": [
       {
         "id": "skill-md",
@@ -77,15 +86,28 @@
           "name": "Skills",
           "icon": "$(book)",
           "contextualTitle": "Copilot Skills",
+          "when": "skillPreview.showExplorerView",
           "initialSize": 0,
           "visibility": "visible",
           "order": -9999
+        }
+      ],
+      "skillPreviewSidebar": [
+        {
+          "id": "skillsSidebar",
+          "name": "Skills",
+          "icon": "$(book)",
+          "when": "skillPreview.showActivityBarView"
         }
       ]
     },
     "viewsWelcome": [
       {
         "view": "skillsExplorer",
+        "contents": "No skills found.\n\nCreate a skill directory under `~/.copilot/skills/` (personal) or `.copilot/skills/` (workspace).\n[New Skill](command:skill-preview.newSkill)"
+      },
+      {
+        "view": "skillsSidebar",
         "contents": "No skills found.\n\nCreate a skill directory under `~/.copilot/skills/` (personal) or `.copilot/skills/` (workspace).\n[New Skill](command:skill-preview.newSkill)"
       }
     ],
@@ -124,24 +146,24 @@
       "view/title": [
         {
           "command": "skill-preview.refresh",
-          "when": "view == skillsExplorer",
+          "when": "view == skillsExplorer || view == skillsSidebar",
           "group": "navigation"
         },
         {
           "command": "skill-preview.newSkill",
-          "when": "view == skillsExplorer",
+          "when": "view == skillsExplorer || view == skillsSidebar",
           "group": "navigation"
         }
       ],
       "view/item/context": [
         {
           "command": "skill-preview.openSkill",
-          "when": "view == skillsExplorer && viewItem == skillFile",
+          "when": "(view == skillsExplorer || view == skillsSidebar) && viewItem == skillFile",
           "group": "inline"
         },
         {
           "command": "skill-preview.revealInExplorer",
-          "when": "view == skillsExplorer && (viewItem == skillFolder || viewItem == skillFile)",
+          "when": "(view == skillsExplorer || view == skillsSidebar) && (viewItem == skillFolder || viewItem == skillFile)",
           "group": "navigation"
         }
       ]
@@ -171,6 +193,19 @@
           "type": "boolean",
           "default": true,
           "description": "Show file count badge on skill folder items"
+        },
+        "skill-preview.viewMode": {
+          "type": "string",
+          "enum": [
+            "explorer",
+            "activitybar"
+          ],
+          "default": "explorer",
+          "markdownDescription": "Where to show the Skills tree.",
+          "enumDescriptions": [
+            "Show Skills as a dedicated view inside the Explorer container.",
+            "Show Skills in its own Activity Bar container with a dedicated sidebar icon."
+          ]
         }
       }
     }
