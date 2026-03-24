@@ -1,79 +1,121 @@
-# Copilot Skill Browser
+# Skills of LLM
 
-A VS Code extension for browsing, previewing and authoring **GitHub Copilot SKILL.md** files.
+Skills of LLM is a VS Code extension for browsing, previewing, editing, and creating GitHub Copilot skill files.
+
+It is designed around the day-to-day workflow of using `SKILL.md` files, not just storing them in a repository.
+
+![Skills of LLM screenshot](assets/screenshot.png)
+
+## What It Does
+
+- Shows personal and project skills in a dedicated `Skills` sidebar
+- Opens skill markdown in a readable preview by default from the skills tree
+- Provides a one-click `Edit` action to switch from preview to normal text editing
+- Creates new skills with a guided wizard
+- Adds syntax highlighting, diagnostics, and snippets for `SKILL.md`
+- Optionally creates an Explorer mirror folder (`.!SKILLS`) for native file access
+
+## Main Workflow
+
+### Browse Skills
+
+Open the `Skills` activity bar icon to see:
+
+- `Personal Skills` from `~/.copilot/skills`
+- `Workspace` skills from `.github/skills` or `.copilot/skills`
+
+Each skill folder shows its files as a tree. Clicking a markdown file opens the preview directly.
+
+### Preview First, Edit When Needed
+
+The extension is optimized for preview-first reading:
+
+- Clicking a skill markdown file in the `Skills` tree opens preview
+- The preview window includes an `Edit` button in the top-right corner
+- Hovering files in the `Skills` tree shows an edit action for normal text editing
+
+If you enable the Explorer mirror folder, markdown files under `.!SKILLS` also open in preview by default.
+
+### Create New Skills
+
+Use the `+` button in the `Skills` view, or run `Skill Preview: New Skill`.
+
+The wizard will:
+
+1. Ask whether the skill should be created in personal or workspace scope
+2. Ask for the skill folder name
+3. Ask for display name and description
+4. Generate a ready-to-edit `SKILL.md`
 
 ## Features
 
-### 1. Skills Explorer (Tree View)
+### Skills Sidebar
 
-A dedicated panel in the VS Code Explorer sidebar that automatically scans all available skill directories:
+- Dedicated Activity Bar entry for skills
+- Personal and workspace sources grouped separately
+- Auto refresh when files change
+- Vendor-aware icons for well-known skill names
+- Inline edit action on file items
 
-| Source | Path | Icon |
-|--------|------|------|
-| Personal | `~/.copilot/skills/` | $(account) |
-| Workspace | `.copilot/skills/` | $(root-folder) |
-| Custom | configurable | $(folder-library) |
+### Preview Webview
 
-- Each skill folder is displayed with its display `name` from frontmatter (falls back to directory name)
-- Tooltip shows the skill `description`
-- Warning icon on skills with missing required frontmatter
-- Context-aware icons for well-known skill types (version, milestone, github, etc.)
-- File system watcher — the tree refreshes automatically when skills are added/removed/modified
+- Renders frontmatter in a readable table
+- Renders markdown body as formatted HTML
+- Includes an `Edit` button for switching to plain text editing
+- Opens in the active editor column instead of split view
 
-### 2. New Skill Wizard
+### Syntax Highlighting
 
-Use the **+** button in the Skills panel toolbar (or `Skill Preview: New Skill`) to launch a guided wizard:
+Files named `SKILL.md` or ending with `.skill.md` get:
 
-1. Choose location: **Personal** (`~/.copilot/skills/`) or **Workspace** (`.copilot/skills/`)
-2. Enter a kebab-case skill directory name
-3. Enter a display name and description
-4. A ready-to-edit `SKILL.md` is created from the built-in template
+- YAML frontmatter highlighting
+- Markdown highlighting for the body
+- File icons for supported skill markdown files
 
-### 3. SKILL.md Syntax Highlighting
+### Diagnostics
 
-Files named `SKILL.md` or ending in `.skill.md` receive:
+The extension reports common authoring problems:
 
-- **YAML frontmatter** highlighting with distinct colours for required fields (`name`, `description`), optional fields (`argument-hint`, `user-invocable`, `disable-model-invocation`), and unknown fields
-- Full **Markdown** highlighting for the body (headings, bold/italic, code blocks, lists, blockquotes)
+- Missing frontmatter delimiters
+- Missing required `name`
+- Missing required `description`
+- Unknown frontmatter fields
 
-### 4. Diagnostics (Error Checking)
+### Snippets
 
-Red/orange squiggles and Problems panel entries for:
+Available in `SKILL.md` and markdown skill files:
 
-| Severity | Rule |
-|----------|------|
-| Error | Missing `---` frontmatter delimiters |
-| Error | Missing required field `name` |
-| Error | Missing required field `description` |
-| Warning | Unknown / non-standard frontmatter field |
+- `skill`
+- `skill-min`
+- `## when`
+- `## produces`
+- `## steps`
+- `## policy`
 
-### 5. Code Snippets
-
-Trigger in any `SKILL.md` or `.skill.md` file:
-
-| Prefix | Inserts |
-|--------|---------|
-| `skill` | Full frontmatter + scaffold |
-| `skill-min` | Minimal frontmatter |
-| `## when` | "When To Use" section |
-| `## produces` | "What This Skill Produces" section |
-| `## steps` | Numbered "Steps" section |
-| `## policy` | "Default Policy" section |
-| `name:` `description:` … | Individual frontmatter fields |
-
-### 6. Skill Preview Webview
-
-Right-click any `SKILL.md` in the tree and choose **Open Preview** to see a rendered HTML preview of the frontmatter and markdown body directly in VS Code.
-
-## Configuration
+## Settings
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `skill-preview.personalSkillsPath` | `""` | Override personal skills root (defaults to `~/.copilot/skills/`) |
-| `skill-preview.extraSkillPaths` | `[]` | Additional skill root directories to scan |
-| `skill-preview.showFileCount` | `true` | Show file count badge on skill folder items |
+| `skill-preview.personalSkillsPath` | `""` | Override the personal skills root. Defaults to `~/.copilot/skills`. |
+| `skill-preview.extraSkillPaths` | `[]` | Add extra skill roots to scan. |
+| `skill-preview.showFileCount` | `true` | Show file count badges on skill folders. |
+| `skill-preview.disableExplorerSkillMirrorFolder` | `true` | When enabled, the extension does not create the `.!SKILLS` mirror folder in Explorer. |
 
-## SKILL.md Format
+## Explorer Mirror Folder
+
+If `skill-preview.disableExplorerSkillMirrorFolder` is set to `false`, the extension creates:
+
+```text
+.!SKILLS/
+	Local Skills/
+	Project Skills/
+```
+
+This gives you a native Explorer entry point to skill files while keeping the dedicated `Skills` sidebar available.
+
+## Skill File Format
+
+Typical example:
 
 ```markdown
 ---
@@ -88,19 +130,26 @@ disable-model-invocation: false
 
 ## When To Use
 
-…
+Describe when the skill should be selected.
 
 ## What This Skill Produces
 
-- …
+- Expected outputs
+
+## Steps
+
+1. Step one
+2. Step two
+3. Step three
 ```
 
-## Development
+## Install
 
-```bash
-npm install
-npm run build          # one-off build
-npm run build:watch    # rebuild on save
-```
+Install the packaged extension from a `.vsix`, or install it from your distribution channel.
 
-Press **F5** in VS Code to launch the Extension Development Host.
+## Use Cases
+
+- Review skills without switching into raw markdown immediately
+- Maintain personal skills and project-specific skills in one place
+- Author new skills with validation and snippets
+- Keep workspace skills readable for teammates
