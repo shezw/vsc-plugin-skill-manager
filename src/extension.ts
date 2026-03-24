@@ -8,32 +8,23 @@ import {
   SkillFileItem,
   SourceItem,
 } from './skillsTreeProvider';
-import { SkillFsProvider, SKILL_FS_FOLDER_NAME, SKILL_FS_ROOT, SKILL_FS_SCHEME } from './skillFsProvider';
 import { SkillDiagnosticsProvider } from './skillDiagnostics';
 
-type ViewMode = 'workspace' | 'explorer' | 'activitybar';
-
 export function activate(context: vscode.ExtensionContext): void {
-  const skillFs = new SkillFsProvider(() => getPrimaryProjectRoot());
+  ensureExplorerSkillMirrors();
   context.subscriptions.push(
-    vscode.workspace.registerFileSystemProvider(SKILL_FS_SCHEME, skillFs, {
-      isCaseSensitive: true,
+    vscode.workspace.onDidChangeWorkspaceFolders(() => {
+      ensureExplorerSkillMirrors();
     }),
   );
 
   // ── Tree view ──────────────────────────────────────────────────────────────
   const treeProvider = new SkillsTreeProvider(context);
-  const explorerView = vscode.window.createTreeView('skillsExplorer', {
-    treeDataProvider: treeProvider,
-    showCollapseAll: true,
-  });
   const sidebarView = vscode.window.createTreeView('skillsSidebar', {
     treeDataProvider: treeProvider,
     showCollapseAll: true,
   });
-  context.subscriptions.push(explorerView, sidebarView, treeProvider);
-
-  void applyWorkspacePresentation(context, getViewMode());
+  context.subscriptions.push(sidebarView, treeProvider);
 
   // ── Diagnostics ────────────────────────────────────────────────────────────
   const diagnostics = new SkillDiagnosticsProvider();
@@ -129,7 +120,6 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
-      void applyWorkspacePresentation(context, getViewMode());
       treeProvider.refresh();
     }),
   );
@@ -139,107 +129,67 @@ export function deactivate(): void {
   // nothing
 }
 
-function getViewMode(): ViewMode {
-  const mode = vscode.workspace.getConfiguration('skill-preview').get<string>('viewMode', 'workspace');
-  if (mode === 'activitybar' || mode === 'explorer' || mode === 'workspace') {
-    return mode;
-  }
-  return 'workspace';
-}
-
-function applyViewModeContext(mode: ViewMode): void {
-  void vscode.commands.executeCommand('setContext', 'skillPreview.showExplorerView', mode === 'explorer');
-  void vscode.commands.executeCommand('setContext', 'skillPreview.showActivityBarView', mode === 'activitybar');
-}
-
-async function applyWorkspacePresentation(
-  context: vscode.ExtensionContext,
-  mode: ViewMode,
-): Promise<void> {
-  applyViewModeContext(mode);
-
-  if (mode !== 'workspace') {
-    removeSkillWorkspaceFolder();
-    return;
-  }
-
-  const projectFolders = getProjectFolders();
-  if (projectFolders.length === 0) {
-    return;
-  }
-
-  if (!vscode.workspace.workspaceFile || vscode.workspace.workspaceFile.scheme === 'untitled') {
-    const reopened = await ensureSavedWorkspace(context, projectFolders);
-    if (reopened) {
-      return;
-    }
-  }
-
-  ensureSkillWorkspaceFolder();
-}
-
 function getProjectFolders(): readonly vscode.WorkspaceFolder[] {
-  return (vscode.workspace.workspaceFolders ?? []).filter((folder) => folder.uri.scheme !== SKILL_FS_SCHEME);
+  return (vscode.workspace.workspaceFolders ?? []).filter((folder) => folder.uri.scheme === 'file');
 }
 
-function getPrimaryProjectRoot(): string | undefined {
-  return getProjectFolders()[0]?.uri.fsPath;
-}
-
-function ensureSkillWorkspaceFolder(): void {
-  const folders = vscode.workspace.workspaceFolders ?? [];
-  const currentIndex = folders.findIndex((folder) => folder.uri.scheme === SKILL_FS_SCHEME);
-  if (currentIndex === 0) {
-    return;
-  }
-  if (currentIndex > 0) {
-    vscode.workspace.updateWorkspaceFolders(currentIndex, 1);
-  }
-  vscode.workspace.updateWorkspaceFolders(0, 0, {
-    uri: SKILL_FS_ROOT,
-    name: SKILL_FS_FOLDER_NAME,
-  });
-}
-
-function removeSkillWorkspaceFolder(): void {
-  const folders = vscode.workspace.workspaceFolders ?? [];
-  const currentIndex = folders.findIndex((folder) => folder.uri.scheme === SKILL_FS_SCHEME);
-  if (currentIndex !== -1) {
-    vscode.workspace.updateWorkspaceFolders(currentIndex, 1);
+function ensureExplorerSkillMirrors(): void {
+  for (const folder of getProjectFolders()) {
+    ensureExplorerSkillMirror(folder.uri.fsPath);
   }
 }
 
-async function ensureSavedWorkspace(
-  context: vscode.ExtensionContext,
-  projectFolders: readonly vscode.WorkspaceFolder[],
-): Promise<boolean> {
-  const primaryRoot = projectFolders[0]?.uri;
-  if (!primaryRoot || primaryRoot.scheme !== 'file') {
-    return false;
+function ensureExplorerSkillMirror(workspaceRoot: string): void {
+  const mirrorRoot = path.join(workspaceRoot, '.!SKILLS');
+  fs.mkdirSync(mirrorRoot, { recursive: true });
+
+  const localRoot = path.join(os.homedir(), '.copilot', 'skills');
+  fs.mkdirSync(localRoot, { recursive: true });
+
+  const projectRoot = getOrCreateProjectSkillsRoot(workspaceRoot);
+  syncMirrorLink(path.join(mirrorRoot, 'Local Skills'), localRoot);
+  syncMirrorLink(path.join(mirrorRoot, 'Project Skills'), projectRoot);
+}
+
+function getOrCreateProjectSkillsRoot(workspaceRoot: string): string {
+  const githubRoot = path.join(workspaceRoot, '.github', 'skills');
+  const copilotRoot = path.join(workspaceRoot, '.copilot', 'skills');
+  if (fs.existsSync(githubRoot)) {
+    return githubRoot;
+  }
+  if (fs.existsSync(copilotRoot)) {
+    return copilotRoot;
+  }
+  fs.mkdirSync(githubRoot, { recursive: true });
+  return githubRoot;
+}
+
+function syncMirrorLink(linkPath: string, targetPath: string): void {
+  fs.mkdirSync(path.dirname(linkPath), { recursive: true });
+
+  try {
+    const existing = fs.lstatSync(linkPath);
+    if (existing.isSymbolicLink()) {
+      const currentTarget = fs.readlinkSync(linkPath);
+      if (path.resolve(path.dirname(linkPath), currentTarget) === path.resolve(targetPath)) {
+        return;
+      }
+    }
+    removePathIfExists(linkPath);
+  } catch {
+    // Link does not exist yet.
   }
 
-  const workspaceDir = vscode.Uri.joinPath(primaryRoot, '.vscode');
-  const workspaceFile = vscode.Uri.joinPath(workspaceDir, 'skills.code-workspace');
-  const saveKey = `saved-workspace:${primaryRoot.toString()}`;
-  if (context.workspaceState.get<string>(saveKey) === workspaceFile.toString()) {
-    return false;
-  }
+  const linkType = process.platform === 'win32' ? 'junction' : 'dir';
+  fs.symlinkSync(targetPath, linkPath, linkType);
+}
 
-  await vscode.workspace.fs.createDirectory(workspaceDir);
-  const payload = {
-    folders: [
-      { name: SKILL_FS_FOLDER_NAME, uri: SKILL_FS_ROOT.toString() },
-      ...projectFolders.map((folder) => ({ name: folder.name, path: folder.uri.fsPath })),
-    ],
-    settings: {
-      'skill-preview.viewMode': 'workspace',
-    },
-  };
-  const content = new TextEncoder().encode(JSON.stringify(payload, null, 2));
-  await vscode.workspace.fs.writeFile(workspaceFile, content);
-  await context.workspaceState.update(saveKey, workspaceFile.toString());
-  await vscode.commands.executeCommand('vscode.openFolder', workspaceFile, false);
-  return true;
+function removePathIfExists(targetPath: string): void {
+  try {
+    fs.rmSync(targetPath, { recursive: true, force: true });
+  } catch {
+    // Best effort cleanup.
+  }
 }
 
 // ─── New skill wizard ─────────────────────────────────────────────────────────
@@ -252,7 +202,7 @@ async function createNewSkill(
   const workspaceFolders = getProjectFolders();
   const workspaceRoot =
     workspaceFolders.length > 0
-      ? path.join(workspaceFolders[0].uri.fsPath, '.github', 'skills')
+      ? getOrCreateProjectSkillsRoot(workspaceFolders[0].uri.fsPath)
       : undefined;
 
   const choices: vscode.QuickPickItem[] = [
