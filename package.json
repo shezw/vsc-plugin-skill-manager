@@ -2,7 +2,7 @@
   "name": "skill-preview",
   "displayName": "Skills of LLM",
   "description": "Browse, preview and author GitHub Copilot SKILL.md files with syntax highlighting, diagnostics and snippets.",
-  "version": "0.2.9",
+  "version": "0.3.0",
   "publisher": "shezw",
   "license": "MIT",
   "repository": {
@@ -86,7 +86,7 @@
           "name": "Skills",
           "group": "top@1",
           "icon": "$(book)",
-          "contextualTitle": "Copilot Skills",
+          "contextualTitle": "Skills",
           "when": "skillPreview.showExplorerView",
           "initialSize": 0,
           "visibility": "visible",
@@ -198,12 +198,14 @@
         "skill-preview.viewMode": {
           "type": "string",
           "enum": [
+            "workspace",
             "explorer",
             "activitybar"
           ],
-          "default": "explorer",
+          "default": "workspace",
           "markdownDescription": "Where to show the Skills tree.",
           "enumDescriptions": [
+            "Show SKILLS as the first root in a multi-root workspace, with Local Skills and Project Skills under it.",
             "Show Skills as a dedicated view inside the Explorer container.",
             "Show Skills in its own Activity Bar container with a dedicated sidebar icon."
           ]

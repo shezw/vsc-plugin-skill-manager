@@ -8,17 +8,18 @@ import {
   SkillFileItem,
   SourceItem,
 } from './skillsTreeProvider';
+import { SkillFsProvider, SKILL_FS_FOLDER_NAME, SKILL_FS_ROOT, SKILL_FS_SCHEME } from './skillFsProvider';
 import { SkillDiagnosticsProvider } from './skillDiagnostics';
 
-type ViewMode = 'explorer' | 'activitybar';
+type ViewMode = 'workspace' | 'explorer' | 'activitybar';
 
 export function activate(context: vscode.ExtensionContext): void {
-  // ── Clean up any skillfs:// workspace folder injected by a previous version ─
-  const folders = vscode.workspace.workspaceFolders ?? [];
-  const staleIdx = folders.findIndex((f) => f.uri.scheme === 'skillfs');
-  if (staleIdx !== -1) {
-    vscode.workspace.updateWorkspaceFolders(staleIdx, 1);
-  }
+  const skillFs = new SkillFsProvider(() => getPrimaryProjectRoot());
+  context.subscriptions.push(
+    vscode.workspace.registerFileSystemProvider(SKILL_FS_SCHEME, skillFs, {
+      isCaseSensitive: true,
+    }),
+  );
 
   // ── Tree view ──────────────────────────────────────────────────────────────
   const treeProvider = new SkillsTreeProvider(context);
@@ -32,7 +33,7 @@ export function activate(context: vscode.ExtensionContext): void {
   });
   context.subscriptions.push(explorerView, sidebarView, treeProvider);
 
-  applyViewModeContext(getViewMode());
+  void applyWorkspacePresentation(context, getViewMode());
 
   // ── Diagnostics ────────────────────────────────────────────────────────────
   const diagnostics = new SkillDiagnosticsProvider();
@@ -128,7 +129,7 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
-      applyViewModeContext(getViewMode());
+      void applyWorkspacePresentation(context, getViewMode());
       treeProvider.refresh();
     }),
   );
@@ -139,13 +140,106 @@ export function deactivate(): void {
 }
 
 function getViewMode(): ViewMode {
-  const mode = vscode.workspace.getConfiguration('skill-preview').get<string>('viewMode', 'explorer');
-  return mode === 'activitybar' ? 'activitybar' : 'explorer';
+  const mode = vscode.workspace.getConfiguration('skill-preview').get<string>('viewMode', 'workspace');
+  if (mode === 'activitybar' || mode === 'explorer' || mode === 'workspace') {
+    return mode;
+  }
+  return 'workspace';
 }
 
 function applyViewModeContext(mode: ViewMode): void {
   void vscode.commands.executeCommand('setContext', 'skillPreview.showExplorerView', mode === 'explorer');
   void vscode.commands.executeCommand('setContext', 'skillPreview.showActivityBarView', mode === 'activitybar');
+}
+
+async function applyWorkspacePresentation(
+  context: vscode.ExtensionContext,
+  mode: ViewMode,
+): Promise<void> {
+  applyViewModeContext(mode);
+
+  if (mode !== 'workspace') {
+    removeSkillWorkspaceFolder();
+    return;
+  }
+
+  const projectFolders = getProjectFolders();
+  if (projectFolders.length === 0) {
+    return;
+  }
+
+  if (!vscode.workspace.workspaceFile || vscode.workspace.workspaceFile.scheme === 'untitled') {
+    const reopened = await ensureSavedWorkspace(context, projectFolders);
+    if (reopened) {
+      return;
+    }
+  }
+
+  ensureSkillWorkspaceFolder();
+}
+
+function getProjectFolders(): readonly vscode.WorkspaceFolder[] {
+  return (vscode.workspace.workspaceFolders ?? []).filter((folder) => folder.uri.scheme !== SKILL_FS_SCHEME);
+}
+
+function getPrimaryProjectRoot(): string | undefined {
+  return getProjectFolders()[0]?.uri.fsPath;
+}
+
+function ensureSkillWorkspaceFolder(): void {
+  const folders = vscode.workspace.workspaceFolders ?? [];
+  const currentIndex = folders.findIndex((folder) => folder.uri.scheme === SKILL_FS_SCHEME);
+  if (currentIndex === 0) {
+    return;
+  }
+  if (currentIndex > 0) {
+    vscode.workspace.updateWorkspaceFolders(currentIndex, 1);
+  }
+  vscode.workspace.updateWorkspaceFolders(0, 0, {
+    uri: SKILL_FS_ROOT,
+    name: SKILL_FS_FOLDER_NAME,
+  });
+}
+
+function removeSkillWorkspaceFolder(): void {
+  const folders = vscode.workspace.workspaceFolders ?? [];
+  const currentIndex = folders.findIndex((folder) => folder.uri.scheme === SKILL_FS_SCHEME);
+  if (currentIndex !== -1) {
+    vscode.workspace.updateWorkspaceFolders(currentIndex, 1);
+  }
+}
+
+async function ensureSavedWorkspace(
+  context: vscode.ExtensionContext,
+  projectFolders: readonly vscode.WorkspaceFolder[],
+): Promise<boolean> {
+  const primaryRoot = projectFolders[0]?.uri;
+  if (!primaryRoot || primaryRoot.scheme !== 'file') {
+    return false;
+  }
+
+  const workspaceDir = vscode.Uri.joinPath(primaryRoot, '.vscode');
+  const workspaceFile = vscode.Uri.joinPath(workspaceDir, 'skills.code-workspace');
+  const saveKey = `saved-workspace:${primaryRoot.toString()}`;
+  if (context.workspaceState.get<string>(saveKey) === workspaceFile.toString()) {
+    return false;
+  }
+
+  await vscode.workspace.fs.createDirectory(workspaceDir);
+  const payload = {
+    folders: [
+      { name: SKILL_FS_FOLDER_NAME, uri: SKILL_FS_ROOT.toString() },
+      ...projectFolders.map((folder) => ({ name: folder.name, path: folder.uri.fsPath })),
+    ],
+    settings: {
+      'skill-preview.viewMode': 'workspace',
+    },
+  };
+  const content = new TextEncoder().encode(JSON.stringify(payload, null, 2));
+  await vscode.workspace.fs.writeFile(workspaceFile, content);
+  await context.workspaceState.update(saveKey, workspaceFile.toString());
+  await vscode.commands.executeCommand('vscode.openFolder', workspaceFile, false);
+  return true;
 }
 
 // ─── New skill wizard ─────────────────────────────────────────────────────────
@@ -155,10 +249,10 @@ async function createNewSkill(
   treeProvider: SkillsTreeProvider,
 ): Promise<void> {
   const personalRoot = path.join(os.homedir(), '.copilot', 'skills');
-  const workspaceFolders = vscode.workspace.workspaceFolders ?? [];
+  const workspaceFolders = getProjectFolders();
   const workspaceRoot =
     workspaceFolders.length > 0
-      ? path.join(workspaceFolders[0].uri.fsPath, '.copilot', 'skills')
+      ? path.join(workspaceFolders[0].uri.fsPath, '.github', 'skills')
       : undefined;
 
   const choices: vscode.QuickPickItem[] = [
