@@ -18,13 +18,6 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.workspace.updateWorkspaceFolders(staleIdx, 1);
   }
 
-  ensureWorkspaceSkillMirrors();
-  context.subscriptions.push(
-    vscode.workspace.onDidChangeWorkspaceFolders(() => {
-      ensureWorkspaceSkillMirrors();
-    }),
-  );
-
   // ── Tree view ──────────────────────────────────────────────────────────────
   const treeProvider = new SkillsTreeProvider(context);
   const treeView = vscode.window.createTreeView('skillsExplorer', {
@@ -124,67 +117,6 @@ export function activate(context: vscode.ExtensionContext): void {
 
 export function deactivate(): void {
   // nothing
-}
-
-function ensureWorkspaceSkillMirrors(): void {
-  for (const workspaceFolder of vscode.workspace.workspaceFolders ?? []) {
-    if (workspaceFolder.uri.scheme !== 'file') {
-      continue;
-    }
-
-    const workspaceRoot = workspaceFolder.uri.fsPath;
-    const mirrorRoot = path.join(workspaceRoot, 'SKILLS');
-    const personalRoot = path.join(os.homedir(), '.copilot', 'skills');
-    const workspaceSkillRoots = [
-      path.join(workspaceRoot, '.github', 'skills'),
-      path.join(workspaceRoot, '.copilot', 'skills'),
-    ];
-
-    fs.mkdirSync(mirrorRoot, { recursive: true });
-    syncMirrorLink(path.join(mirrorRoot, 'Personal Skills'), personalRoot);
-
-    for (const skillRoot of workspaceSkillRoots) {
-      if (!fs.existsSync(skillRoot)) {
-        continue;
-      }
-
-      const label = path.relative(workspaceRoot, skillRoot).replace(/\\/g, '/');
-      syncMirrorLink(path.join(mirrorRoot, label), skillRoot);
-    }
-  }
-}
-
-function syncMirrorLink(linkPath: string, targetPath: string): void {
-  if (!fs.existsSync(targetPath)) {
-    removePathIfExists(linkPath);
-    return;
-  }
-
-  fs.mkdirSync(path.dirname(linkPath), { recursive: true });
-
-  try {
-    const existing = fs.lstatSync(linkPath);
-    if (existing.isSymbolicLink()) {
-      const currentTarget = fs.readlinkSync(linkPath);
-      if (path.resolve(path.dirname(linkPath), currentTarget) === path.resolve(targetPath)) {
-        return;
-      }
-    }
-    removePathIfExists(linkPath);
-  } catch {
-    // Link does not exist yet.
-  }
-
-  const linkType = process.platform === 'win32' ? 'junction' : 'dir';
-  fs.symlinkSync(targetPath, linkPath, linkType);
-}
-
-function removePathIfExists(targetPath: string): void {
-  try {
-    fs.rmSync(targetPath, { recursive: true, force: true });
-  } catch {
-    // Best effort cleanup.
-  }
 }
 
 // ─── New skill wizard ─────────────────────────────────────────────────────────
