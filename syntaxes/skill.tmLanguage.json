@@ -1,0 +1,200 @@
+{
+  "name": "SKILL Markdown",
+  "scopeName": "text.skill-md",
+  "fileTypes": ["skill.md"],
+  "patterns": [
+    { "include": "#frontmatter" },
+    { "include": "#markdown-body" }
+  ],
+  "repository": {
+    "frontmatter": {
+      "name": "meta.embedded.block.yaml meta.frontmatter.skill",
+      "begin": "\\A(---)[\\s]*$",
+      "end": "^(---)[\\s]*$",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.frontmatter.begin.skill-md" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.frontmatter.end.skill-md" }
+      },
+      "patterns": [
+        { "include": "#frontmatter-required-key" },
+        { "include": "#frontmatter-optional-key" },
+        { "include": "#frontmatter-unknown-key" },
+        { "include": "#frontmatter-string-value" },
+        { "include": "#frontmatter-boolean-value" }
+      ]
+    },
+
+    "frontmatter-required-key": {
+      "match": "^(name|description)(:)",
+      "captures": {
+        "1": { "name": "keyword.other.frontmatter.required.skill-md" },
+        "2": { "name": "punctuation.separator.key-value.skill-md" }
+      }
+    },
+
+    "frontmatter-optional-key": {
+      "match": "^(argument-hint|user-invocable|disable-model-invocation)(:)",
+      "captures": {
+        "1": { "name": "keyword.other.frontmatter.optional.skill-md" },
+        "2": { "name": "punctuation.separator.key-value.skill-md" }
+      }
+    },
+
+    "frontmatter-unknown-key": {
+      "match": "^([a-zA-Z][a-zA-Z0-9_-]*)(:)",
+      "captures": {
+        "1": { "name": "variable.other.frontmatter.unknown.skill-md" },
+        "2": { "name": "punctuation.separator.key-value.skill-md" }
+      }
+    },
+
+    "frontmatter-string-value": {
+      "patterns": [
+        {
+          "match": "(:)\\s*('(?:[^']|'')*')",
+          "captures": {
+            "1": { "name": "punctuation.separator.key-value.skill-md" },
+            "2": { "name": "string.quoted.single.skill-md" }
+          }
+        },
+        {
+          "match": "(:)\\s*(\"(?:[^\\\\\"]|\\\\.)*\")",
+          "captures": {
+            "1": { "name": "punctuation.separator.key-value.skill-md" },
+            "2": { "name": "string.quoted.double.skill-md" }
+          }
+        },
+        {
+          "match": "(:)\\s+([^\\s#][^\\n]*)",
+          "captures": {
+            "1": { "name": "punctuation.separator.key-value.skill-md" },
+            "2": { "name": "string.unquoted.skill-md" }
+          }
+        }
+      ]
+    },
+
+    "frontmatter-boolean-value": {
+      "match": "(:)\\s+(true|false)\\b",
+      "captures": {
+        "1": { "name": "punctuation.separator.key-value.skill-md" },
+        "2": { "name": "constant.language.boolean.skill-md" }
+      }
+    },
+
+    "markdown-body": {
+      "patterns": [
+        { "include": "#heading1" },
+        { "include": "#heading2" },
+        { "include": "#heading3" },
+        { "include": "#heading4" },
+        { "include": "#code-block" },
+        { "include": "#inline-code" },
+        { "include": "#bold-italic" },
+        { "include": "#bold" },
+        { "include": "#italic" },
+        { "include": "#list-item" },
+        { "include": "#blockquote" }
+      ]
+    },
+
+    "heading1": {
+      "match": "^(#)\\s+(.+)$",
+      "captures": {
+        "1": { "name": "punctuation.definition.heading.skill-md" },
+        "2": { "name": "entity.name.section.skill-md markup.heading.1.skill-md" }
+      }
+    },
+
+    "heading2": {
+      "match": "^(##)\\s+(.+)$",
+      "captures": {
+        "1": { "name": "punctuation.definition.heading.skill-md" },
+        "2": { "name": "entity.name.section.skill-md markup.heading.2.skill-md" }
+      }
+    },
+
+    "heading3": {
+      "match": "^(###)\\s+(.+)$",
+      "captures": {
+        "1": { "name": "punctuation.definition.heading.skill-md" },
+        "2": { "name": "entity.name.section.skill-md markup.heading.3.skill-md" }
+      }
+    },
+
+    "heading4": {
+      "match": "^(####)\\s+(.+)$",
+      "captures": {
+        "1": { "name": "punctuation.definition.heading.skill-md" },
+        "2": { "name": "entity.name.section.skill-md markup.heading.4.skill-md" }
+      }
+    },
+
+    "code-block": {
+      "name": "markup.raw.block.skill-md",
+      "begin": "^(```)(\\w*)?$",
+      "end": "^(```)$",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.raw.skill-md" },
+        "2": { "name": "storage.type.language.skill-md" }
+      },
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.raw.skill-md" }
+      },
+      "contentName": "markup.raw.content.skill-md"
+    },
+
+    "inline-code": {
+      "name": "markup.inline.raw.string.skill-md",
+      "match": "(`[^`]+`)",
+      "captures": {
+        "1": { "name": "markup.inline.raw.string.skill-md" }
+      }
+    },
+
+    "bold-italic": {
+      "match": "(\\*\\*\\*|___)(.+?)(\\*\\*\\*|___)",
+      "captures": {
+        "1": { "name": "punctuation.definition.bold.skill-md" },
+        "2": { "name": "markup.bold.italic.skill-md" },
+        "3": { "name": "punctuation.definition.bold.skill-md" }
+      }
+    },
+
+    "bold": {
+      "match": "(\\*\\*|__)(.+?)(\\*\\*|__)",
+      "captures": {
+        "1": { "name": "punctuation.definition.bold.skill-md" },
+        "2": { "name": "markup.bold.skill-md" },
+        "3": { "name": "punctuation.definition.bold.skill-md" }
+      }
+    },
+
+    "italic": {
+      "match": "(\\*|_)([^*_]+)(\\*|_)",
+      "captures": {
+        "1": { "name": "punctuation.definition.italic.skill-md" },
+        "2": { "name": "markup.italic.skill-md" },
+        "3": { "name": "punctuation.definition.italic.skill-md" }
+      }
+    },
+
+    "list-item": {
+      "match": "^(\\s*)([-*+]|\\d+\\.)(\\s+)(.*)$",
+      "captures": {
+        "2": { "name": "punctuation.definition.list.skill-md" },
+        "4": { "name": "markup.list.item.skill-md" }
+      }
+    },
+
+    "blockquote": {
+      "match": "^(>+)(\\s*)(.*)?$",
+      "captures": {
+        "1": { "name": "punctuation.definition.quote.skill-md" },
+        "3": { "name": "markup.quote.skill-md" }
+      }
+    }
+  }
+}

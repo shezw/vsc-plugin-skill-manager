@@ -1,0 +1,9 @@
+<!-- OpenAI brand mark: abstract blossom / gear shape in green -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <circle cx="8" cy="8" r="8" fill="#10A37F"/>
+  <!-- Simplified OpenAI logo: interlocked rounded petals -->
+  <path fill="#FFFFFF" fill-rule="evenodd"
+    d="M8 3.2a4.8 4.8 0 1 0 0 9.6A4.8 4.8 0 0 0 8 3.2Zm0 1.4a3.4 3.4 0 1 1 0 6.8A3.4 3.4 0 0 1 8 4.6Z"/>
+  <path fill="#FFFFFF"
+    d="M8 6a2 2 0 1 0 0 4A2 2 0 0 0 8 6Z"/>
+</svg>

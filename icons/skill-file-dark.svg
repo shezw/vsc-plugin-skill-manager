@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+  <!-- Skill file icon: document with sparkle (dark/colored variant) -->
+  <rect x="2" y="1" width="9" height="13" rx="1" stroke="#4EC9B0" stroke-width="1.2" fill="none"/>
+  <line x1="4.5" y1="5" x2="8.5" y2="5" stroke="#4EC9B0" stroke-width="1"/>
+  <line x1="4.5" y1="7.5" x2="8.5" y2="7.5" stroke="#4EC9B0" stroke-width="1"/>
+  <line x1="4.5" y1="10" x2="7" y2="10" stroke="#4EC9B0" stroke-width="1"/>
+  <!-- sparkle -->
+  <path d="M13 2 L13.5 4 L15 4 L13.9 5 L14.4 7 L13 6 L11.6 7 L12.1 5 L11 4 L12.5 4 Z" fill="#FFCC00" stroke="none"/>
+</svg>

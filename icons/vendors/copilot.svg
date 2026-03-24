@@ -1,0 +1,14 @@
+<!-- Copilot / GitHub Copilot: pilot helmet silhouette -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <circle cx="8" cy="8" r="8" fill="#24292F"/>
+  <!-- Helmet outline -->
+  <path fill="#FFFFFF"
+    d="M8 2.5C5.52 2.5 3.5 4.52 3.5 7v2.5c0 .83.67 1.5 1.5 1.5h.5v.5A1.5 1.5 0 0 0 7 13h2
+       a1.5 1.5 0 0 0 1.5-1.5V11H11c.83 0 1.5-.67 1.5-1.5V7C12.5 4.52 10.48 2.5 8 2.5Z"/>
+  <!-- Visor -->
+  <path fill="#24292F"
+    d="M5.5 7.5c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1c0 .55-.45 1-1 1h-3c-.55 0-1-.45-1-1Z"/>
+  <!-- Eye highlights -->
+  <circle cx="6.5" cy="8" r=".4" fill="#58A6FF"/>
+  <circle cx="9.5" cy="8" r=".4" fill="#58A6FF"/>
+</svg>

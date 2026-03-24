@@ -1,0 +1,9 @@
+<!-- Anthropic / Claude brand mark: stylised "A" letterform -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!-- Warm cream background circle -->
+  <circle cx="8" cy="8" r="8" fill="#CC785C"/>
+  <!-- Anthropic "A" wordmark simplified -->
+  <path fill="#FFFAF5"
+    d="M5.1 11.5 L8 4.5 L10.9 11.5 H9.4 L8.8 9.9 H7.2 L6.6 11.5 Z
+       M7.55 8.8 H8.45 L8 7.4 Z"/>
+</svg>

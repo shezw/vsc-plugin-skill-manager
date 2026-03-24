@@ -1,0 +1,120 @@
+{
+  "SKILL Frontmatter (full)": {
+    "prefix": ["skill", "skill-fm", "frontmatter"],
+    "description": "Insert a complete SKILL.md frontmatter block with all fields",
+    "body": [
+      "---",
+      "name: ${1:skill-name}",
+      "description: '${2:Describe when to use this skill and what it does}'",
+      "argument-hint: '${3:Describe expected arguments or context}'",
+      "user-invocable: ${4|true,false|}",
+      "disable-model-invocation: ${5|false,true|}",
+      "---",
+      "",
+      "# ${6:Skill Title}",
+      "",
+      "## When To Use",
+      "",
+      "${7:Describe the scenarios where this skill should be invoked.}",
+      "",
+      "## What This Skill Produces",
+      "",
+      "- ${8:Describe output 1}",
+      "$0"
+    ]
+  },
+
+  "SKILL Frontmatter (minimal)": {
+    "prefix": ["skill-min", "fm-min"],
+    "description": "Insert a minimal SKILL.md frontmatter with required fields only",
+    "body": [
+      "---",
+      "name: ${1:skill-name}",
+      "description: '${2:Short description}'",
+      "---",
+      "",
+      "# ${3:Skill Title}",
+      "",
+      "$0"
+    ]
+  },
+
+  "Section: When To Use": {
+    "prefix": ["when", "## when"],
+    "description": "Insert a 'When To Use' section",
+    "body": [
+      "## When To Use",
+      "",
+      "${1:Describe the scenarios where this skill should be invoked.}",
+      "",
+      "$0"
+    ]
+  },
+
+  "Section: What This Skill Produces": {
+    "prefix": ["produces", "## produces", "## what"],
+    "description": "Insert a 'What This Skill Produces' section",
+    "body": [
+      "## What This Skill Produces",
+      "",
+      "- ${1:Output or action 1}",
+      "- ${2:Output or action 2}",
+      "$0"
+    ]
+  },
+
+  "Section: Steps": {
+    "prefix": ["steps", "## steps"],
+    "description": "Insert a numbered 'Steps' section",
+    "body": [
+      "## Steps",
+      "",
+      "1. ${1:First step}",
+      "2. ${2:Second step}",
+      "3. ${3:Third step}",
+      "$0"
+    ]
+  },
+
+  "Section: Default Policy": {
+    "prefix": ["policy", "## policy", "## default"],
+    "description": "Insert a 'Default Policy' section",
+    "body": [
+      "## Default Policy",
+      "",
+      "- Use `${1:option-a}` when ${2:condition A}.",
+      "- Use `${3:option-b}` when ${4:condition B}.",
+      "$0"
+    ]
+  },
+
+  "Frontmatter field: name": {
+    "prefix": ["name:"],
+    "description": "Insert the 'name' frontmatter field",
+    "body": ["name: ${1:skill-name}"]
+  },
+
+  "Frontmatter field: description": {
+    "prefix": ["description:"],
+    "description": "Insert the 'description' frontmatter field",
+    "body": ["description: '${1:Description}'"]
+  },
+
+  "Frontmatter field: argument-hint": {
+    "prefix": ["argument-hint:", "hint:"],
+    "description": "Insert the 'argument-hint' frontmatter field",
+    "body": ["argument-hint: '${1:Describe expected input}'"]
+  },
+
+  "Frontmatter field: user-invocable": {
+    "prefix": ["user-invocable:"],
+    "description": "Insert the 'user-invocable' frontmatter field",
+    "body": ["user-invocable: ${1|true,false|}"]
+  },
+
+  "Frontmatter field: disable-model-invocation": {
+    "prefix": ["disable-model-invocation:"],
+    "description": "Insert the 'disable-model-invocation' frontmatter field",
+    "body": ["disable-model-invocation: ${1|false,true|}"]
+  }
+}

@@ -1,0 +1,12 @@
+# Exclude source and tooling from the packaged extension
+.vscode/**
+.vscode-test/**
+src/**
+node_modules/**
+out/test/**
+scripts/**
+*.vsix
+tsconfig*.json
+esbuild*.js
+.gitignore
+.eslintrc*

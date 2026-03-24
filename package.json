@@ -1,0 +1,207 @@
+{
+  "name": "skill-preview",
+  "displayName": "Skills of LLM",
+  "description": "Browse, preview and author GitHub Copilot SKILL.md files with syntax highlighting, diagnostics and snippets.",
+  "version": "0.2.0",
+  "publisher": "shezw",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shezw/vsc-plugin-skill-manager"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages",
+    "Snippets"
+  ],
+  "keywords": [
+    "copilot",
+    "skill",
+    "ai",
+    "agent"
+  ],
+  "icon": "icons/extension-icon.png",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "skill-md",
+        "aliases": [
+          "SKILL Markdown",
+          "skill-md"
+        ],
+        "filenames": [
+          "SKILL.md"
+        ],
+        "extensions": [
+          ".skill.md"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/skill-file-light.svg",
+          "dark": "./icons/skill-file-dark.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "skill-md",
+        "scopeName": "text.skill-md",
+        "path": "./syntaxes/skill.tmLanguage.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.yaml": "yaml",
+          "meta.embedded.block.markdown": "markdown"
+        }
+      }
+    ],
+    "snippets": [
+      {
+        "language": "skill-md",
+        "path": "./snippets/skill.json"
+      },
+      {
+        "language": "markdown",
+        "path": "./snippets/skill.json"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "skillsExplorer",
+          "name": "Skills",
+          "icon": "$(book)",
+          "contextualTitle": "Copilot Skills",
+          "initialSize": 2,
+          "visibility": "visible"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "skillsExplorer",
+        "contents": "No skills found.\n\nCreate a skill directory under `~/.copilot/skills/` (personal) or `.copilot/skills/` (workspace).\n[New Skill](command:skill-preview.newSkill)"
+      }
+    ],
+    "commands": [
+      {
+        "command": "skill-preview.refresh",
+        "title": "Refresh Skills",
+        "icon": "$(refresh)",
+        "category": "Skill Preview"
+      },
+      {
+        "command": "skill-preview.newSkill",
+        "title": "New Skill",
+        "icon": "$(add)",
+        "category": "Skill Preview"
+      },
+      {
+        "command": "skill-preview.openSkill",
+        "title": "Edit Skill File",
+        "icon": "$(edit)",
+        "category": "Skill Preview"
+      },
+      {
+        "command": "skill-preview.revealInExplorer",
+        "title": "Reveal in File Explorer",
+        "icon": "$(folder-opened)",
+        "category": "Skill Preview"
+      },
+      {
+        "command": "skill-preview.previewSkill",
+        "title": "Preview Skill",
+        "category": "Skill Preview"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "skill-preview.refresh",
+          "when": "view == skillsExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "skill-preview.newSkill",
+          "when": "view == skillsExplorer",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "skill-preview.openSkill",
+          "when": "view == skillsExplorer && viewItem == skillFile",
+          "group": "inline"
+        },
+        {
+          "command": "skill-preview.revealInExplorer",
+          "when": "view == skillsExplorer && (viewItem == skillFolder || viewItem == skillFile)",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configurationDefaults": {
+      "files.exclude": {
+        "**/.copilot": true
+      }
+    },
+    "configuration": {
+      "title": "Copilot Skill Browser",
+      "properties": {
+        "skill-preview.personalSkillsPath": {
+          "type": "string",
+          "default": "",
+          "description": "Custom path for personal skills directory (defaults to ~/.copilot/skills/)"
+        },
+        "skill-preview.extraSkillPaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Additional skill root directories to scan"
+        },
+        "skill-preview.showFileCount": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show file count badge on skill folder items"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "node esbuild.js",
+    "build:watch": "node esbuild.js --watch",
+    "compile": "tsc -p tsconfig.json --noEmit",
+    "compile:test": "tsc -p tsconfig.test.json --noEmit",
+    "pretest": "npm run build && npm run build:tests",
+    "build:tests": "node esbuild.test.js",
+    "test": "node out/test/runTests.js",
+    "test:unit": "node_modules/.bin/mocha 'out/test/unit/**/*.test.js' --timeout 5000",
+    "package": "node_modules/.bin/vsce package",
+    "publish": "node_modules/.bin/vsce publish",
+    "lint": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.7.1",
+    "esbuild": "^0.20.0",
+    "glob": "^13.0.6",
+    "mocha": "^11.7.5",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}

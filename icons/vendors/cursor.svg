@@ -1,0 +1,7 @@
+<!-- Cursor IDE brand mark: stylised cursor arrow in dark -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <rect width="16" height="16" rx="3" fill="#1A1A1A"/>
+  <!-- Cursor arrow path -->
+  <path fill="#FFFFFF"
+    d="M4 3 L4 13 L7 10 L9.5 14.5 L11 13.8 L8.5 9.3 L12 9.3 Z"/>
+</svg>
