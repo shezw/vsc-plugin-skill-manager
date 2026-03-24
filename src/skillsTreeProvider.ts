@@ -58,8 +58,7 @@ export class SourceItem extends vscode.TreeItem {
   ) {
     super(source.label, vscode.TreeItemCollapsibleState.Expanded);
     this.contextValue = 'skillSource';
-    this.description = path.join(source.rootPath, source.subPath)
-      .replace(os.homedir(), '~');
+    this.description = '(' + path.join(source.rootPath, source.subPath).replace(os.homedir(), '~') + ')';
     this.tooltip = path.join(source.rootPath, source.subPath);
     this.iconPath = sourceIcon(source.kind);
   }
@@ -108,7 +107,7 @@ export class SkillFileItem extends vscode.TreeItem {
       title: 'Preview',
       arguments: [filePath],
     };
-    this.iconPath = fileIcon(label);
+    this.iconPath = fileIcon(label, extensionUri);
   }
 }
 
@@ -321,10 +320,13 @@ function _themeIconByCategory(name: string): vscode.ThemeIcon | undefined {
   return undefined;
 }
 
-function fileIcon(name: string): IconInput {
+function fileIcon(name: string, extensionUri: vscode.Uri): IconInput {
   const lower = name.toLowerCase();
-  if (lower.endsWith('.md') || lower === 'skill.md') {
-    return new vscode.ThemeIcon('markdown');
+  if (lower.endsWith('.md')) {
+    return {
+      light: vscode.Uri.joinPath(extensionUri, 'icons', 'skill-file-light.svg'),
+      dark:  vscode.Uri.joinPath(extensionUri, 'icons', 'skill-file-dark.svg'),
+    };
   }
   if (lower.endsWith('.json') || lower.endsWith('.yaml') || lower.endsWith('.yml')) {
     return new vscode.ThemeIcon('json');
