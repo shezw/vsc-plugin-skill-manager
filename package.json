@@ -2,7 +2,7 @@
   "name": "skill-preview",
   "displayName": "Skills of LLM",
   "description": "Browse, preview and author GitHub Copilot SKILL.md files with syntax highlighting, diagnostics and snippets.",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "publisher": "shezw",
   "license": "MIT",
   "repository": {
@@ -84,6 +84,7 @@
         {
           "id": "skillsExplorer",
           "name": "Skills",
+          "group": "top@1",
           "icon": "$(book)",
           "contextualTitle": "Copilot Skills",
           "when": "skillPreview.showExplorerView",
