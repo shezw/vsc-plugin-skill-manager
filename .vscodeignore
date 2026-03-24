@@ -1,6 +1,7 @@
 # Exclude source and tooling from the packaged extension
 .vscode/**
 .vscode-test/**
+.!SKILLS/**
 src/**
 node_modules/**
 out/test/**

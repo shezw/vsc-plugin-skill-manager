@@ -2,7 +2,7 @@
   "name": "skill-preview",
   "displayName": "Skills of LLM",
   "description": "Browse, preview and author GitHub Copilot SKILL.md files with syntax highlighting, diagnostics and snippets.",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "publisher": "shezw",
   "license": "MIT",
   "repository": {
@@ -153,8 +153,8 @@
       "explorer/context": [
         {
           "command": "skill-preview.openSkill",
-          "when": "!explorerResourceIsFolder && resourceExtname == .md && resourcePath =~ /\\/.!SKILLS\\//",
-          "group": "inline"
+          "when": "!explorerResourceIsFolder && resourceExtname == .md && resourcePath =~ /\\.\\!SKILLS/",
+          "group": "navigation@1"
         }
       ],
       "view/item/context": [

@@ -15,6 +15,31 @@ class SkillPreviewDocument implements vscode.CustomDocument {
   dispose(): void {}
 }
 
+class SkillMirrorDecorationProvider implements vscode.FileDecorationProvider {
+  private readonly _onDidChangeFileDecorations = new vscode.EventEmitter<vscode.Uri | vscode.Uri[] | undefined>();
+  readonly onDidChangeFileDecorations = this._onDidChangeFileDecorations.event;
+
+  provideFileDecoration(uri: vscode.Uri): vscode.FileDecoration | undefined {
+    if (uri.scheme !== 'file') {
+      return undefined;
+    }
+
+    const normalized = uri.fsPath.replace(/\\/g, '/');
+    const base = path.basename(normalized);
+
+    if (base === '.!SKILLS') {
+      return new vscode.FileDecoration('S', 'Skills mirror root', new vscode.ThemeColor('charts.yellow'));
+    }
+    if (normalized.includes('/.!SKILLS/Local Skills')) {
+      return new vscode.FileDecoration('L', 'Local Skills', new vscode.ThemeColor('charts.blue'));
+    }
+    if (normalized.includes('/.!SKILLS/Project Skills')) {
+      return new vscode.FileDecoration('P', 'Project Skills', new vscode.ThemeColor('charts.green'));
+    }
+    return undefined;
+  }
+}
+
 export function activate(context: vscode.ExtensionContext): void {
   ensureExplorerSkillMirrors();
   context.subscriptions.push(
@@ -30,6 +55,9 @@ export function activate(context: vscode.ExtensionContext): void {
     showCollapseAll: true,
   });
   context.subscriptions.push(sidebarView, treeProvider);
+  context.subscriptions.push(
+    vscode.window.registerFileDecorationProvider(new SkillMirrorDecorationProvider()),
+  );
 
   context.subscriptions.push(
     vscode.window.registerCustomEditorProvider(
